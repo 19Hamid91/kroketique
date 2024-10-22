@@ -15,12 +15,15 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\RawJs;
 use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\RestoreAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -42,8 +45,8 @@ class ProductResource extends Resource
                     ->required()
                     ->label('Price')
                     ->numeric()
-                    ->mask(RawJs::make('$money($input)'))
-                    ->stripCharacters(','),
+                    ->prefix('Rp')
+                    ->currencyMask(thousandSeparator: ',',decimalSeparator: '.',precision: 0),
                 Textarea::make('description')
                     ->required()
                     ->maxLength(65535)
@@ -65,7 +68,7 @@ class ProductResource extends Resource
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('price')
-                    ->money()
+                    ->currency('IDR')
                     ->sortable(),
                 ToggleColumn::make('is_available'),
                 ToggleColumn::make('is_popular'),
@@ -89,9 +92,12 @@ class ProductResource extends Resource
                 Filter::make('is_popular')
                     ->query(fn (Builder $query): Builder => $query->where('is_popular', true))
                     ->label('Popular'),
+                TrashedFilter::make()
             ])
             ->actions([
                 EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -103,7 +109,7 @@ class ProductResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            // 
         ];
     }
 
